@@ -13,6 +13,8 @@ import AdminGenres from "./pages/admin/genres/index.jsx";
 import GenreCreate from "./pages/admin/genres/create.jsx";
 import AdminAuthors from "./pages/admin/authors/index.jsx";
 import AuthorCreate from "./pages/admin/authors/create.jsx";
+import AuthorEdit from "./pages/admin/authors/edit.jsx";
+import GenreEdit from "./pages/admin/genres/edit.jsx";
 function App() {
   return (
     <>
@@ -35,10 +37,13 @@ function App() {
             <Route path="genres">
               <Route index element={<AdminGenres />} />
               <Route path="create" element={<GenreCreate />} />
+              <Route path="/admin/genres/edit/:id" element={<GenreEdit />} />
+
             </Route>
             <Route path="authors">
               <Route index element={<AdminAuthors />} />
               <Route path="create" element={<AuthorCreate />} />
+              <Route path="/admin/authors/edit/:id" element={<AuthorEdit />} />
             </Route>
 
             <Route path="books">

@@ -21,7 +21,7 @@ export default function BookCreate() {
     description: "",
   });
 
-  // ✅ Fetch authors & genres on mount
+  // Fetch authors & genres on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,7 +39,7 @@ export default function BookCreate() {
     fetchData();
   }, []);
 
-  // ✅ Handle input change
+  // Handle input change
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -50,7 +50,7 @@ export default function BookCreate() {
     }
   };
 
-  // ✅ Handle submit
+  // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
