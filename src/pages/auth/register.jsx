@@ -1,4 +1,58 @@
+import { useState } from "react";
+import { register } from "../../_services/auth";
+import { Navigate, useNavigate } from "react-router-dom";
+
 export default function Register() {
+  const [formData, setFormData] = useState({
+    email: "",
+    name: "",
+    password: "",
+    password_confirmation: "",
+  });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await register(formData);
+      console.log(response);
+
+      localStorage.setItem("accessToken", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      navigate("/");
+    } catch (err) {
+      console.log("Register error:", err.response?.data);
+
+      // GET ALL ERROR FROM BACKEND
+      const backendErrors = err?.response?.data?.error;
+
+      // COMBINE ALL VALIDATION ERRORS INTO A SINGLE STRING
+      if (backendErrors && typeof backendErrors === "object") {
+        const allMessages = Object.values(backendErrors).flat().join(", ");
+        setError(allMessages);
+      } else {
+        // FALLBACK ERROR MESSAGE
+        const message =
+          err?.response?.data?.message ||
+          "An unexpected error occurred. Please try again.";
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <section className="bg-gray-50 dark:bg-gray-900">
@@ -8,7 +62,19 @@ export default function Register() {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
                 Create an account
               </h1>
-              <form className="space-y-4 md:space-y-6" action="#">
+              {error && (
+                <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+                  {error.split(",").map((msg, i) => (
+                    <p key={i}>• {msg.trim()}</p>
+                  ))}
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4 md:space-y-6"
+                action="#"
+              >
                 <div>
                   <label
                     htmlFor="email"
@@ -20,9 +86,11 @@ export default function Register() {
                     type="email"
                     name="email"
                     id="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 focus:border-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder="name@company.com"
-                    required=""
+                    placeholder="name@gmail.com"
+                    required
                   />
                 </div>
                 <div>
@@ -36,9 +104,11 @@ export default function Register() {
                     type="text"
                     name="name"
                     id="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 focus:border-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder="name@company.com"
-                    required=""
+                    placeholder="Your Name"
+                    required
                   />
                 </div>
                 <div>
@@ -52,9 +122,27 @@ export default function Register() {
                     type="password"
                     name="password"
                     id="password"
-                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 focus:border-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    required=""
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="password_confirmation"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Password Confirmation
+                  </label>
+                  <input
+                    type="password"
+                    name="password_confirmation"
+                    id="password_confirmation"
+                    value={formData.password_confirmation}
+                    onChange={handleChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 focus:border-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    required
                   />
                 </div>
                 <div className="flex items-start">
@@ -86,7 +174,7 @@ export default function Register() {
                   type="submit"
                   className="w-full text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800"
                 >
-                  Create an account
+                  {loading ? "Registering..." : "Create an account"}
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
                   Already have an account?{" "}

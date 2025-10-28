@@ -1,6 +1,33 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { logout, useDecodeToken } from "../_services/auth";
+import { useEffect } from "react";
 
 export default function AdminLayout() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("accessToken");
+  const userInfo = JSON.parse(localStorage.getItem("user"));
+  const decodeData = useDecodeToken(token);
+
+  // Redirect if not admin
+  useEffect(() => {
+    // Check token validity
+    if (!token || !decodeData || !decodeData.success) {
+      navigate("/login");
+    }
+    // Check role
+    const role = userInfo?.role;
+    if (role !== "admin" || !role) {
+      navigate("/");
+    }
+  }, [token, decodeData, userInfo, navigate]);
+
+  const handleLogout = async () => {
+    if (token) {
+      await logout({ token });
+    }
+    navigate("/login");
+  };
+
   return (
     <>
       <div className="antialiased bg-gray-50 dark:bg-gray-900">
@@ -78,6 +105,14 @@ export default function AdminLayout() {
                 </svg>
               </button>
 
+              {/* Button name  */}
+              <Link
+                to="#"
+                className="hidden md:flex mr-4 text-gray-800 dark:text-white hover:bg-gray-50 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-4 py-2 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800"
+              >
+                Admin Panel
+              </Link>
+
               <button
                 type="button"
                 className="flex mx-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
@@ -110,12 +145,12 @@ export default function AdminLayout() {
                   aria-labelledby="dropdown"
                 >
                   <li>
-                    <Link
-                      to="#"
+                    <button
+                      onClick={handleLogout}
                       className="block py-2 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                     >
                       Sign out
-                    </Link>
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -282,6 +317,27 @@ export default function AdminLayout() {
                   </svg>
                   <span className="ml-3">Help</span>
                 </Link>
+              </li>
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="ml-3">Sign Out</span>
+                </button>
               </li>
             </ul>
           </div>
