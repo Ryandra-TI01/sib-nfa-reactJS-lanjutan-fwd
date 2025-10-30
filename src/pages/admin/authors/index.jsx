@@ -7,7 +7,6 @@ export default function AdminAuthors() {
   const [authors, setAuthors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [confirmId, setConfirmId] = useState(null);
 
   const fetchAuthors = async () => {
     try {
@@ -26,21 +25,17 @@ export default function AdminAuthors() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this author?")) return;
-
-    try {
-      await deleteAuthor(id);
-      setAuthors((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete author");
-    }
+    await deleteAuthor(id);
+    setAuthors((prev) => prev.filter((a) => a.id !== id));
   };
 
   return (
     <section className="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
       <div className="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div className="flex items-center justify-between p-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Authors</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Authors
+          </h2>
           <Link
             to="/admin/authors/create"
             className="text-white bg-indigo-700 hover:bg-indigo-800 font-medium rounded-lg text-sm px-4 py-2"
@@ -66,7 +61,10 @@ export default function AdminAuthors() {
               <tbody>
                 {authors.length > 0 ? (
                   authors.map((author, i) => (
-                    <tr key={author.id} className="border-b dark:border-gray-700">
+                    <tr
+                      key={author.id}
+                      className="border-b dark:border-gray-700"
+                    >
                       <td className="px-4 py-3">{i + 1}</td>
                       <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                         {author.name}

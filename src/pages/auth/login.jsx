@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login, useDecodeToken } from "../../_services/auth";
+import { login } from "../../_services/auth";
+import { handleApiError } from "../../utils/handleApiError";
 
 export default function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("accessToken");
-  const decodeData = useDecodeToken(token);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,26 +21,16 @@ export default function Login() {
 
     try {
       const response = await login(formData);
-      console.log(response);
-
       localStorage.setItem("accessToken", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
       navigate(response.data.user.role === "admin" ? "/admin" : "/");
     } catch (err) {
-      const message = err?.response?.data?.message;
-      setError(message);
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
   };
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (token && decodeData && decodeData.success) {
-      navigate("/admin");
-    }
-  }, [token, decodeData, navigate]);
 
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
@@ -52,12 +41,14 @@ export default function Login() {
               Sign in to your account
             </h1>
 
-            {error && (
-              <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
-                {error}
-              </div>
-            )}
-
+              {error && (
+                <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+                  {error.split(",").map((msg, i) => (
+                    <p key={i}>• {msg.trim()}</p>
+                  ))}
+                </div>
+              )}
+              
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label

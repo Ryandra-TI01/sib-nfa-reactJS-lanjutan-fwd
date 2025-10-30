@@ -21,6 +21,6 @@ export const updateAuthor = async (id, payload) => {
 };
 
 export const deleteAuthor = async (id) => {
-  const { data } = await API.delete(`/authors/${id}`);
-  return data;
+    const { data } = await API.delete(`/authors/${id}`);
+    return data;
 };

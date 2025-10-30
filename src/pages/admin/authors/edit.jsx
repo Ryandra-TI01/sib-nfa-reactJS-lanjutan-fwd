@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAuthorById, updateAuthor } from "../../../_services/authors";
 import { useNavigate, useParams } from "react-router-dom";
+import { handleApiError } from "../../../utils/handleApiError";
 
 export default function AuthorEdit() {
   const { id } = useParams();
@@ -30,7 +31,7 @@ export default function AuthorEdit() {
       await updateAuthor(id, { name });
       navigate("/admin/authors");
     } catch (err) {
-      setError("Failed to update author");
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }

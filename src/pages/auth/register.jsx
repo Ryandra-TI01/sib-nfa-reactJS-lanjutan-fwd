@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { register } from "../../_services/auth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { handleApiError } from "../../utils/handleApiError";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -32,22 +33,7 @@ export default function Register() {
 
       navigate("/");
     } catch (err) {
-      console.log("Register error:", err.response?.data);
-
-      // GET ALL ERROR FROM BACKEND
-      const backendErrors = err?.response?.data?.error;
-
-      // COMBINE ALL VALIDATION ERRORS INTO A SINGLE STRING
-      if (backendErrors && typeof backendErrors === "object") {
-        const allMessages = Object.values(backendErrors).flat().join(", ");
-        setError(allMessages);
-      } else {
-        // FALLBACK ERROR MESSAGE
-        const message =
-          err?.response?.data?.message ||
-          "An unexpected error occurred. Please try again.";
-        setError(message);
-      }
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
@@ -178,12 +164,12 @@ export default function Register() {
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
                   Already have an account?{" "}
-                  <a
-                    href="login"
+                  <Link
+                    to="/login"
                     className="font-medium text-indigo-600 hover:underline dark:text-indigo-500"
                   >
                     Login here
-                  </a>
+                  </Link>
                 </p>
               </form>
             </div>

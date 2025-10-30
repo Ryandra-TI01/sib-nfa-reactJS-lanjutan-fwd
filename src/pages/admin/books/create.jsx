@@ -1,27 +1,29 @@
-import { useEffect, useState } from "react";
-import { getGenres } from "../../../_services/genres";
-import { getAuthors } from "../../../_services/authors";
-import { createBook } from "../../../_services/books";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAuthors } from "../../../_services/authors";
+import { getGenres } from "../../../_services/genres";
+import { createBook } from "../../../_services/books";
+import { handleApiError } from "../../../utils/handleApiError";
 
 export default function BookCreate() {
+  const navigate = useNavigate();
   const [genres, setGenres] = useState([]);
   const [authors, setAuthors] = useState([]);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: "",
+    description: "",
     price: "",
     stock: "",
     genre_id: "",
     author_id: "",
     cover_photo: null,
-    description: "",
   });
 
-  // Fetch authors & genres on mount
+  // Load authors & genres
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,19 +34,18 @@ export default function BookCreate() {
         setGenres(genresData);
         setAuthors(authorsData);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setErrorMsg("Failed to load genres or authors.");
+        setError("Failed to load genres or authors.");
       }
     };
     fetchData();
   }, []);
 
-  // Handle input change
+  // Handle input
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
-    if (name === "cover_photo") {
+    if (name === "cover_photo" && files?.[0]) {
       setFormData((prev) => ({ ...prev, cover_photo: files[0] }));
+      setPreview(URL.createObjectURL(files[0]));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -53,217 +54,162 @@ export default function BookCreate() {
   // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
+    setError(null);
     setLoading(true);
-
-    // Simple validation
-    if (!formData.title || !formData.genre_id || !formData.author_id) {
-      setErrorMsg("Please fill in all required fields.");
-      setLoading(false);
-      return;
-    }
 
     try {
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        payload.append(key, value);
-      });
+      Object.entries(formData).forEach(([key, value]) =>
+        payload.append(key, value)
+      );
 
       await createBook(payload);
       navigate("/admin/books");
-    } catch (error) {
-      console.error("Error creating book:", error);
-      const msg =
-        error.response?.data?.message ||
-        "Failed to create book. Please check your input.";
-      setErrorMsg(msg);
+    } catch (err) {
+      // const message =
+      //   err?.response?.data?.message ||
+      //   err?.response?.data?.error ||
+      //   Object.values(err?.response?.data?.errors || {})
+      //     .flat()
+      //     .join(", ") ||
+      //   "Failed to create book. Please check your input.";
+      // setError(message);
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="bg-white dark:bg-gray-900">
-      <div className="max-w-2xl px-4 py-8 mx-auto lg:py-16">
-        <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-          Create New Book
-        </h2>
+    <section className="max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 transition-colors duration-300">
+      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+        📘 Add New Book
+      </h2>
 
-        {errorMsg && (
-          <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
-            {errorMsg}
-          </div>
-        )}
+      {error && (
+        <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+          {error.split(",").map((msg, i) => (
+            <p key={i}>• {msg.trim()}</p>
+          ))}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 mb-4 sm:grid-cols-2 sm:gap-6 sm:mb-5">
-            {/* Title */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="title"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Title
-              </label>
-              <input
-                type="text"
-                name="title"
-                id="title"
-                value={formData.title}
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 focus:border-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                placeholder="Book Title"
-                required
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Cover */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Cover Photo
+          </label>
+          <input
+            type="file"
+            name="cover_photo"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500"
+          />
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="mt-3 h-40 object-cover rounded-lg border dark:border-gray-700"
+            />
+          )}
+        </div>
 
-            {/* Price */}
-            <div>
-              <label
-                htmlFor="price"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Price
-              </label>
-              <input
-                type="number"
-                name="price"
-                id="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
-                placeholder="e.g. 150000"
-                required
-              />
-            </div>
+        {/* Title */}
+        <input
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          placeholder="Book Title"
+          className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+          
+        />
 
-            {/* Stock */}
-            <div>
-              <label
-                htmlFor="stock"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Stock
-              </label>
-              <input
-                type="number"
-                name="stock"
-                id="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
-                placeholder="e.g. 20"
-                required
-              />
-            </div>
+        {/* Description */}
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Description"
+          rows={3}
+          className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+          
+        />
 
-            {/* Genre */}
-            <div>
-              <label
-                htmlFor="genre_id"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Genre
-              </label>
-              <select
-                id="genre_id"
-                name="genre_id"
-                value={formData.genre_id}
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
-                required
-              >
-                <option value="">-- Select genre --</option>
-                {genres.map((genre) => (
-                  <option key={genre.id} value={genre.id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Price & Stock */}
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="number"
+            name="price"
+            placeholder="Price"
+            value={formData.price}
+            onChange={handleChange}
+            className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+            
+          />
+          <input
+            type="number"
+            name="stock"
+            placeholder="Stock"
+            value={formData.stock}
+            onChange={handleChange}
+            className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+            
+          />
+        </div>
 
-            {/* Author */}
-            <div>
-              <label
-                htmlFor="author_id"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Author
-              </label>
-              <select
-                id="author_id"
-                name="author_id"
-                value={formData.author_id}
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
-                required
-              >
-                <option value="">-- Select author --</option>
-                {authors.map((author) => (
-                  <option key={author.id} value={author.id}>
-                    {author.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Genre & Author */}
+        <div className="grid grid-cols-2 gap-4">
+          <select
+            name="genre_id"
+            value={formData.genre_id}
+            onChange={handleChange}
+            className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+            
+          >
+            <option value="">-- Select Genre --</option>
+            {genres.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
 
-            {/* Cover Photo */}
-            <div className="w-full">
-              <label
-                htmlFor="cover_photo"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Cover Photo
-              </label>
-              <input
-                type="file"
-                name="cover_photo"
-                id="cover_photo"
-                accept="image/*"
-                onChange={handleChange}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full cursor-pointer dark:bg-gray-700 dark:border-gray-600"
-                required
-              />
-            </div>
+          <select
+            name="author_id"
+            value={formData.author_id}
+            onChange={handleChange}
+            className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+            
+          >
+            <option value="">-- Select Author --</option>
+            {authors.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            {/* Description */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="description"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="6"
-                className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
-                placeholder="Write a description of the book..."
-              ></textarea>
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex items-center space-x-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="text-white bg-indigo-700 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-indigo-600 dark:hover:bg-indigo-700"
-            >
-              {loading ? "Saving..." : "Create Book"}
-            </button>
-            <button
-              type="reset"
-              className="text-gray-600 inline-flex items-center hover:text-white border border-gray-600 hover:bg-gray-600 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-gray-500 dark:text-gray-500 dark:hover:text-white"
-            >
-              Reset
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/books")}
+            className="px-5 py-2.5 rounded-lg bg-gray-400 hover:bg-gray-500 text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors disabled:opacity-70"
+          >
+            {loading ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </form>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createAuthor } from "../../../_services/authors";
 import { useNavigate } from "react-router-dom";
+import { handleApiError } from "../../../utils/handleApiError";
 
 export default function AuthorCreate() {
   const [name, setName] = useState("");
@@ -19,7 +20,8 @@ export default function AuthorCreate() {
       await createAuthor({ name });
       navigate("/admin/authors");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create author");
+      // setError(err.response?.data?.message || "Failed to create author");
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
@@ -28,7 +30,9 @@ export default function AuthorCreate() {
   return (
     <section className="bg-white dark:bg-gray-900">
       <div className="max-w-md px-4 py-8 mx-auto">
-        <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">Add New Author</h2>
+        <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+          Add New Author
+        </h2>
 
         {error && (
           <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
@@ -38,7 +42,10 @@ export default function AuthorCreate() {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            <label
+              htmlFor="name"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
               Author Name
             </label>
             <input
